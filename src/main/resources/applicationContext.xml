@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+       ">
+	<bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="vm://localhost?broker.persistent=false" />
+	</bean>
+	<bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
+		<property name="connectionFactory" ref="connectionFactory" />
+	</bean>
+	<camelContext xmlns="http://camel.apache.org/schema/spring">
+		<route>
+			<from uri="activemq:queue:test.queue" />
+			<to uri="bean:myBean?method=appendCamel"/>
+			<to uri="stream:out" />
+		</route>
+		
+		<route>
+			<from uri="activemq:queue:test.queue1" />
+			<to uri="bean:myBean?method=appendCamel"/>
+			<to uri="bean:myBean?method=justToPrint"/>
+			<to uri="stream:out" />
+		</route>
+		
+		<route>
+			<from uri="direct:example" />
+			<bean ref="myBean" method="appendCamel"/>
+			<to uri="stream:out" />
+		</route>
+		
+		<route>
+			<from uri="direct:redirectExample" />
+			<bean ref="myBean" method="appendCamel"/>
+			<to uri="direct:redirect" />
+		</route>
+		
+		<route>
+			<from uri="direct:redirect" />
+			<bean ref="myBean" method="justToPrint"/>
+			<to uri="stream:out" />
+		</route>
+		
+		<route>
+			<from uri="direct:exchange" />
+			<bean ref="myBean" method="exchageFirst"/>
+			<bean ref="myBean" method="exchageSecond"/>
+			<to uri="stream:out" />
+		</route>
+		
+		<route id="timerSample">
+			<from uri="timer://myTimer?period=2000&amp;repeatCount=3" />
+			<bean ref="myBean" method="timerSample"/>
+			<to uri="stream:out" />
+		</route>
+	</camelContext>
+	<bean id="myBean" class="org.kvkit.camelexamples.logics.MyBeans"/>
+
+</beans>
